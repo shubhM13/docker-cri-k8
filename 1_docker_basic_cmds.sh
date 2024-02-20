@@ -107,7 +107,7 @@ docker inspect cid
 docker tag myimage myrepo/myimage:tag
 docker pull nginx
 docker push myimg
-docker commint cid mynewimage
+docker commit cid mynewimage
 
 docker run -d -p 80:80 nginx
 docker image

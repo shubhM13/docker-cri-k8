@@ -190,6 +190,8 @@ kubectl config view
 kubectl config use-context my-cluster-name
 kubectl config set-context --current --user=<user-name>
 kubectl create configmap app-config --from-file=app-config.properties
+kubectl get configmap myconfig -o yaml > myconfig_backup.yaml
+
 
 #6) kubectl exec (2)
 kubectl exec -it mypod -- /bin/bash
@@ -236,6 +238,8 @@ spec:
 
 kubectl apply -f deployment.yaml
 
+
+
 # Sample deployment.yaml -- Using Persistent Volumes -- Application needs to store data persistently
 
 -- 1. First create a PersistenVolume(PV) and PersistentVolumeClaim(PVC) in a pv-pvc.yaml file:
@@ -268,8 +272,7 @@ spec:
 kubectl apply -f pv-pvc.yaml
 -------
 
--- 2. Modify the deployment to use the PVC - deplo
-:.yaml
+-- 2. Modify the deployment to use the PVC - deplo.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -299,6 +302,73 @@ spec:
 kubectl apply -f deploynt.yaml
 --------
 
+
+
+pv-pvc.yaml
+
+apiVersion: apps/v1
+kind: PersistentVolume
+metadata:
+    name: mypv
+spec:
+    capacity:
+        storage: 1Gi
+    accessModes: 
+        - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Retain
+    hostPath:
+        path: /mnt/data
+
+apiVersion: apps/v1
+kind: PersistentVolumeClaim
+metadata: 
+    name: mypvc
+spec:
+    accessModes: 
+        - ReadWriteOnce
+    resources:
+        requests:
+            storage: 1Gi
+
+
+deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: myapp
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: myapp
+        template:
+            metadata:
+                labels:
+                    app: myapp
+            spec:
+                containers:
+                    name: myapp
+                    version: myapp:1.0
+                    livelinessProbe:
+                        httpGet:
+                            path: /healthz
+                            port: 8080
+                        initialDelaySeconds: 3
+                        periodSeconds: 3
+                    readinessProbe:
+                        httpGet:
+                            path: /ready
+                            port: 8080
+                        initialDelaySeconds:3
+                        periodSeconds:3
+                    volumeMounts:
+                        mountPath: /mnt/data
+                        name: myvolume
+                volumes:
+                    name: mypv
+                persistentVolumeClaim:
+                    claimName: mypvc
 
 
 
